@@ -8,6 +8,14 @@
     (e) => {
       const mod = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
+      const plainKey = !mod && !e.altKey && !e.shiftKey;
+      const typing =
+        e.target &&
+        (e.target.isContentEditable ||
+          ["input", "textarea", "select"].includes(
+            e.target.tagName?.toLowerCase()
+          ));
+      const selectionText = window.getSelection?.()?.toString().trim() || "";
 
       if (mod && e.shiftKey && key === "a") {
         if (window.__quickerestToggleAdBlock) {
@@ -18,7 +26,7 @@
               : "Removedor de anúncios pausado."
           );
         }
-      } else if (mod && e.shiftKey && key === "f") {
+      } else if (plainKey && key === "f" && !typing) {
         const search = document.querySelector(
           'input[data-test-id="search-box-input"], input[placeholder*="Search" i], input[placeholder*="Pesquisar" i], input[aria-label*="Search" i], input[aria-label*="Pesquisar" i]'
         );
@@ -28,15 +36,15 @@
         } else {
           showNotice("Campo de pesquisa não encontrado.");
         }
-      } else if (mod && e.shiftKey && key === "l") {
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard
-            .writeText(location.href)
-            .then(() => showNotice("Link copiado."))
-            .catch(() => showNotice("Não foi possível copiar o link."));
-        } else {
-          showNotice("A cópia da área de transferência não está disponível.");
-        }
+      } else if (plainKey && key === "q" && !typing) {
+        location.href = "https://www.pinterest.com/";
+      } else if (plainKey && key === "r" && !typing) {
+        savePrimaryImage();
+      } else if (mod && !e.shiftKey && key === "c") {
+        if (typing || selectionText) return;
+        copyPrimaryImage();
+      } else if (mod && e.shiftKey && key === "c") {
+        copyCurrentLink();
       } else if ((e.altKey && e.key === "ArrowLeft") || (mod && e.key === "[")) {
         history.back();
       } else if ((e.altKey && e.key === "ArrowRight") || (mod && e.key === "]")) {
@@ -52,6 +60,86 @@
     },
     true
   );
+
+  function findPrimaryImageUrl() {
+    const ogImage = document
+      .querySelector('meta[property="og:image"], meta[name="og:image"]')
+      ?.getAttribute("content");
+    if (ogImage) return ogImage;
+
+    const candidates = Array.from(
+      document.querySelectorAll(
+        'img[src*="pinimg.com"], img[currentSrc*="pinimg.com"]'
+      )
+    );
+    const best = candidates
+      .filter((img) => img.currentSrc || img.src)
+      .sort(
+        (a, b) =>
+          (b.naturalWidth || 0) * (b.naturalHeight || 0) -
+          (a.naturalWidth || 0) * (a.naturalHeight || 0)
+      )[0];
+    return best?.currentSrc || best?.src || null;
+  }
+
+  function fileNameFromUrl(url) {
+    try {
+      const pathname = new URL(url, location.href).pathname;
+      const raw = pathname.split("/").pop() || "pinterest-image";
+      return raw.includes(".") ? raw : `${raw}.jpg`;
+    } catch {
+      return "pinterest-image.jpg";
+    }
+  }
+
+  function savePrimaryImage() {
+    const imageUrl = findPrimaryImageUrl();
+    if (!imageUrl) {
+      showNotice("Imagem não encontrada para salvar.");
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = fileNameFromUrl(imageUrl);
+    link.rel = "noopener";
+    link.click();
+    showNotice("Download da imagem iniciado.");
+  }
+
+  async function copyPrimaryImage() {
+    const imageUrl = findPrimaryImageUrl();
+    if (!imageUrl) {
+      showNotice("Imagem não encontrada para copiar.");
+      return;
+    }
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+      showNotice("Cópia de imagem não é suportada neste navegador.");
+      return;
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error("fetch failed");
+      const blob = await response.blob();
+      if (!blob.type.startsWith("image/")) throw new Error("not image");
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      showNotice("Imagem copiada.");
+    } catch {
+      showNotice("Não foi possível copiar a imagem.");
+    }
+  }
+
+  function copyCurrentLink() {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(location.href)
+        .then(() => showNotice("Link copiado."))
+        .catch(() => showNotice("Não foi possível copiar o link."));
+    } else {
+      showNotice("A cópia da área de transferência não está disponível.");
+    }
+  }
 
   function showNotice(message) {
     let notice = document.getElementById("quickerest-notice");
