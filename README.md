@@ -28,6 +28,8 @@ com poucos MB: o binário de release no Linux tem **~4,4 MB** e o pacote `.deb` 
 | `Alt + →` / `Ctrl/Cmd + ]` / botão "avançar" do mouse | Avançar |
 | `Ctrl/Cmd + R` / `F5` | Recarregar |
 | `Alt + Home` | Página inicial |
+| `Ctrl/Cmd + Shift + F` | Focar a busca do Pinterest |
+| `Ctrl/Cmd + Shift + L` | Copiar o link da página ou pin aberto |
 
 ## Desenvolvimento
 
@@ -53,7 +55,7 @@ Para trocar o ícone, edite `icon.svg` e rode `npm run icon`.
 
 ## Releases
 
-Ao enviar uma tag `v*` (ex.: `git tag v0.1.0 && git push --tags`), o workflow
+Ao enviar uma tag `v*` (ex.: `git tag v0.2.0 && git push --tags`), o workflow
 `.github/workflows/release.yml` compila o app para macOS (universal), Windows e Linux e
 publica um release no GitHub com os instaladores. Também dá para rodar o
 workflow manualmente em *Actions → release → Run workflow*; a tag `v<versão>` é

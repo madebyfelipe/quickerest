@@ -24,18 +24,26 @@ fn is_pinterest(url: &Url) -> bool {
     let Some(host) = url.host_str() else {
         return false;
     };
-    let labels: Vec<&str> = host.split('.').collect();
-    let regional = labels
-        .iter()
-        .position(|l| *l == "pinterest")
-        .is_some_and(|i| {
-            // Aceita pinterest.com, pinterest.de, pinterest.com.br, pinterest.co.uk...
-            match &labels[i + 1..] {
-                [tld] => tld.len() <= 3,
-                [sld, tld] => matches!(*sld, "com" | "co") && tld.len() == 2,
-                _ => false,
+    let mut labels = host.split('.');
+    let regional = loop {
+        match labels.next() {
+            Some("pinterest") => {
+                // Aceita pinterest.com, pinterest.de, pinterest.com.br, pinterest.co.uk...
+                let Some(tld) = labels.next() else {
+                    break false;
+                };
+                break match labels.next() {
+                    None => tld.len() <= 3,
+                    Some(sld) if matches!(sld, "com" | "co") => {
+                        tld.len() == 2 && labels.next().is_none()
+                    }
+                    Some(_) => false,
+                };
             }
-        });
+            Some(_) => {}
+            None => break false,
+        }
+    };
     regional || host == "pinimg.com" || host.ends_with(".pinimg.com")
 }
 
