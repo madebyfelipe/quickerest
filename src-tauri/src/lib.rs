@@ -9,6 +9,7 @@ const MAIN_WINDOW: &str = "main";
 
 /// Atalhos de navegação que o webview nativo não oferece por padrão.
 const SHORTCUTS_SCRIPT: &str = include_str!("shortcuts.js");
+const AD_BLOCK_SCRIPT: &str = include_str!("adblock.js");
 
 /// Hosts de login (OAuth) que precisam abrir dentro do app para a sessão funcionar.
 const AUTH_HOSTS: &[&str] = &[
@@ -87,6 +88,7 @@ fn create_main_window(app: &AppHandle) -> tauri::Result<()> {
     .title("Quickerest")
     .inner_size(1200.0, 820.0)
     .min_inner_size(400.0, 500.0)
+    .initialization_script(AD_BLOCK_SCRIPT)
     .initialization_script(SHORTCUTS_SCRIPT)
     .on_navigation(move |url| {
         if stays_in_app(url) {

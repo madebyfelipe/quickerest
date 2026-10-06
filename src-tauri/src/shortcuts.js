@@ -9,7 +9,16 @@
       const mod = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
 
-      if (mod && e.shiftKey && key === "f") {
+      if (mod && e.shiftKey && key === "a") {
+        if (window.__quickerestToggleAdBlock) {
+          const enabled = window.__quickerestToggleAdBlock();
+          showNotice(
+            enabled
+              ? "Removedor de anúncios ativado."
+              : "Removedor de anúncios pausado."
+          );
+        }
+      } else if (mod && e.shiftKey && key === "f") {
         const search = document.querySelector(
           'input[data-test-id="search-box-input"], input[placeholder*="Search" i], input[placeholder*="Pesquisar" i], input[aria-label*="Search" i], input[aria-label*="Pesquisar" i]'
         );

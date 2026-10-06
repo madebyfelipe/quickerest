@@ -19,6 +19,7 @@ com poucos MB: o binário de release no Linux tem **~4,4 MB** e o pacote `.deb` 
 - Links externos (lojas, blogs, sites de origem dos pins) abrem no navegador padrão.
 - Login com e-mail/senha e popups de login do Google, Facebook e Apple ficam no app.
 - Downloads de imagens vão para a pasta **Downloads** do sistema.
+- Removedor de anúncios e rastreadores conhecidos, ativado por padrão no Pinterest.
 - O site remoto **não** recebe acesso à API do Tauri (capabilities mínimas).
 - Atalhos de teclado:
 
@@ -30,6 +31,7 @@ com poucos MB: o binário de release no Linux tem **~4,4 MB** e o pacote `.deb` 
 | `Alt + Home` | Página inicial |
 | `Ctrl/Cmd + Shift + F` | Focar a busca do Pinterest |
 | `Ctrl/Cmd + Shift + L` | Copiar o link da página ou pin aberto |
+| `Ctrl/Cmd + Shift + A` | Ativar ou pausar o removedor de anúncios |
 
 ## Desenvolvimento
 
@@ -55,7 +57,7 @@ Para trocar o ícone, edite `icon.svg` e rode `npm run icon`.
 
 ## Releases
 
-Ao enviar uma tag `v*` (ex.: `git tag v0.2.0 && git push --tags`), o workflow
+Ao enviar uma tag `v*` (ex.: `git tag v0.3.0 && git push --tags`), o workflow
 `.github/workflows/release.yml` compila o app para macOS (universal), Windows e Linux e
 publica um release no GitHub com os instaladores. Também dá para rodar o
 workflow manualmente em *Actions → release → Run workflow*; a tag `v<versão>` é
@@ -71,6 +73,7 @@ SmartScreen pode exibir um aviso.
 src-tauri/
   src/lib.rs         janela, regras de navegação, downloads e plugins
   src/shortcuts.js   atalhos de teclado injetados na página
+  src/adblock.js     bloqueio leve de anúncios e rastreadores
   tauri.conf.json    configuração do app e do empacotamento
   capabilities/      permissões (mínimas) do webview
 dist/                fallback local exigido pelo Tauri (não é usado em runtime)
@@ -82,6 +85,10 @@ icon.svg             fonte dos ícones em src-tauri/icons/
 - **Memória:** o app economiza a RAM do navegador inteiro (abas, extensões, processos
   extras), mas a página do Pinterest em si continua rodando num motor web completo,
   então o consumo da página é parecido com o de uma aba.
+- **Bloqueio de anúncios:** o removedor oculta pins identificados como promovidos e
+  bloqueia chamadas `fetch`/XHR para uma lista local de domínios de publicidade e
+  rastreamento. Anúncios servidos pelo próprio Pinterest ou mudanças na marcação da
+  página podem escapar do filtro.
 - **Login com Google:** o Google às vezes bloqueia login em webviews embutidos
   ("este navegador ou app pode não ser seguro"). Se acontecer, use e-mail e senha.
 - Notificações push do site não são suportadas.

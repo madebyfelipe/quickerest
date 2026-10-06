@@ -1,6 +1,6 @@
 [package]
 name = "quickerest"
-version = "0.2.0"
+version = "0.3.0"
 description = "Launcher leve do Pinterest feito com Tauri"
 edition = "2021"
 
