@@ -1,0 +1,23 @@
+{
+  "name": "quickerest",
+  "version": "0.1.0",
+  "description": "Launcher leve do Pinterest feito com Tauri",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icon": "tauri icon icon.svg -o src-tauri/icons"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madebyfelipe/quickerest.git"
+  },
+  "bugs": {
+    "url": "https://github.com/madebyfelipe/quickerest/issues"
+  },
+  "homepage": "https://github.com/madebyfelipe/quickerest#readme",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.1"
+  },
+  "private": true
+}
