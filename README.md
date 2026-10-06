@@ -55,7 +55,9 @@ Para trocar o ícone, edite `icon.svg` e rode `npm run icon`.
 
 Ao enviar uma tag `v*` (ex.: `git tag v0.1.0 && git push --tags`), o workflow
 `.github/workflows/release.yml` compila o app para macOS (universal), Windows e Linux e
-cria um rascunho de release no GitHub com os instaladores.
+publica um release no GitHub com os instaladores. Também dá para rodar o
+workflow manualmente em *Actions → release → Run workflow*; a tag `v<versão>` é
+criada a partir da versão em `src-tauri/tauri.conf.json`.
 
 Os builds não são assinados: no macOS é preciso liberar o app em
 *Ajustes do Sistema → Privacidade e Segurança* na primeira execução, e o Windows

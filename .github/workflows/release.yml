@@ -48,7 +48,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: Quickerest ${{ github.ref_name }}
-          releaseDraft: true
+          # __VERSION__ vem de tauri.conf.json; a tag é criada se ainda não existir.
+          tagName: v__VERSION__
+          releaseName: Quickerest v__VERSION__
+          releaseBody: Instaladores para macOS (universal), Windows e Linux. Veja o README para detalhes.
+          releaseDraft: false
           args: ${{ matrix.args }}
