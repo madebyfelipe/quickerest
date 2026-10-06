@@ -2,6 +2,7 @@
 (() => {
   if (window.__quickerestShortcuts) return;
   window.__quickerestShortcuts = true;
+  let lastHoveredPinImage = null;
 
   window.addEventListener(
     "keydown",
@@ -39,7 +40,7 @@
       } else if (plainKey && key === "q" && !typing) {
         location.href = "https://www.pinterest.com/";
       } else if (plainKey && key === "r" && !typing) {
-        savePrimaryImage();
+        savePrimaryPinOnPinterest();
       } else if (mod && !e.shiftKey && key === "c") {
         if (typing || selectionText) return;
         copyPrimaryImage();
@@ -62,49 +63,159 @@
   );
 
   function findPrimaryImageUrl() {
-    const ogImage = document
-      .querySelector('meta[property="og:image"], meta[name="og:image"]')
-      ?.getAttribute("content");
-    if (ogImage) return ogImage;
+    const hoverUrl = getImageUrl(lastHoveredPinImage);
+    if (hoverUrl) return hoverUrl;
 
     const candidates = Array.from(
       document.querySelectorAll(
         'img[src*="pinimg.com"], img[currentSrc*="pinimg.com"]'
       )
-    );
-    const best = candidates
-      .filter((img) => img.currentSrc || img.src)
-      .sort(
-        (a, b) =>
-          (b.naturalWidth || 0) * (b.naturalHeight || 0) -
-          (a.naturalWidth || 0) * (a.naturalHeight || 0)
-      )[0];
-    return best?.currentSrc || best?.src || null;
-  }
+    ).filter((img) => isViablePinImage(img));
 
-  function fileNameFromUrl(url) {
-    try {
-      const pathname = new URL(url, location.href).pathname;
-      const raw = pathname.split("/").pop() || "pinterest-image";
-      return raw.includes(".") ? raw : `${raw}.jpg`;
-    } catch {
-      return "pinterest-image.jpg";
+    if (candidates.length > 0) {
+      const viewportCenterX = window.innerWidth / 2;
+      const viewportCenterY = window.innerHeight / 2;
+      const best = candidates
+        .map((img) => {
+          const rect = img.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const distance =
+            Math.abs(centerX - viewportCenterX) +
+            Math.abs(centerY - viewportCenterY);
+          const area = rect.width * rect.height;
+          const source = getImageUrl(img) || "";
+          const qualityBoost =
+            source.includes("/originals/") || source.includes("/736x/")
+              ? 150000
+              : 0;
+          return { img, score: area - distance * 20 + qualityBoost };
+        })
+        .sort((a, b) => b.score - a.score)[0]?.img;
+
+      const bestUrl = getImageUrl(best);
+      if (bestUrl) return bestUrl;
     }
+
+    const ogImage = document
+      .querySelector('meta[property="og:image"], meta[name="og:image"]')
+      ?.getAttribute("content");
+    return ogImage || null;
   }
 
-  function savePrimaryImage() {
-    const imageUrl = findPrimaryImageUrl();
-    if (!imageUrl) {
-      showNotice("Imagem não encontrada para salvar.");
+  function getImageUrl(img) {
+    if (!img) return null;
+    return img.currentSrc || img.src || null;
+  }
+
+  function isViablePinImage(img) {
+    const source = getImageUrl(img);
+    if (!source) return false;
+    if (!source.includes("pinimg.com")) return false;
+    if (source.includes("logo") || source.includes("favicon")) return false;
+
+    const rect = img.getBoundingClientRect();
+    if (rect.width < 120 || rect.height < 120) return false;
+    if (rect.bottom <= 0 || rect.right <= 0) return false;
+    if (rect.top >= window.innerHeight || rect.left >= window.innerWidth) {
+      return false;
+    }
+
+    const area = (img.naturalWidth || 0) * (img.naturalHeight || 0);
+    return area >= 30000;
+  }
+
+  function isVisibleElement(element) {
+    if (!element) return false;
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return false;
+    if (rect.bottom <= 0 || rect.right <= 0) return false;
+    if (rect.top >= window.innerHeight || rect.left >= window.innerWidth) {
+      return false;
+    }
+    const style = getComputedStyle(element);
+    return style.visibility !== "hidden" && style.display !== "none";
+  }
+
+  function isSaveButton(button) {
+    if (!button) return false;
+    const text = button.textContent?.trim() || "";
+    const label =
+      button.getAttribute("aria-label") ||
+      button.getAttribute("title") ||
+      button.getAttribute("data-test-id") ||
+      "";
+    return /(?:^|\b)(save|saved|salvar|salvo|guardar)(?:\b|$)/i.test(
+      `${text} ${label}`
+    );
+  }
+
+  function findSaveButtonInside(root) {
+    if (!root) return null;
+
+    const candidates = root.querySelectorAll(
+      'button, [role="button"], div[role="button"]'
+    );
+    for (const button of candidates) {
+      if (isVisibleElement(button) && isSaveButton(button)) return button;
+    }
+    return null;
+  }
+
+  function findSaveButtonForCurrentPin() {
+    const roots = [];
+    if (lastHoveredPinImage) {
+      roots.push(
+        lastHoveredPinImage.closest(
+          '[data-test-id*="pin" i], article, [role="dialog"], main'
+        )
+      );
+    }
+
+    const focusedImage = document.querySelector(
+      'img[src*="pinimg.com"][style*="object-fit"], img[currentSrc*="pinimg.com"][style*="object-fit"]'
+    );
+    if (focusedImage) {
+      roots.push(
+        focusedImage.closest(
+          '[data-test-id*="pin" i], article, [role="dialog"], main'
+        )
+      );
+    }
+
+    for (const root of roots) {
+      const button = findSaveButtonInside(root);
+      if (button) return button;
+    }
+
+    const visibleButtons = Array.from(
+      document.querySelectorAll('button, [role="button"], div[role="button"]')
+    ).filter((button) => isVisibleElement(button) && isSaveButton(button));
+
+    if (visibleButtons.length === 0) return null;
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    return visibleButtons
+      .map((button) => {
+        const rect = button.getBoundingClientRect();
+        const bx = rect.left + rect.width / 2;
+        const by = rect.top + rect.height / 2;
+        const distance = Math.abs(bx - centerX) + Math.abs(by - centerY);
+        return { button, distance };
+      })
+      .sort((a, b) => a.distance - b.distance)[0].button;
+  }
+
+  function savePrimaryPinOnPinterest() {
+    const saveButton = findSaveButtonForCurrentPin();
+    if (!saveButton) {
+      showNotice("Botão de salvar pin não encontrado.");
       return;
     }
 
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = fileNameFromUrl(imageUrl);
-    link.rel = "noopener";
-    link.click();
-    showNotice("Download da imagem iniciado.");
+    saveButton.click();
+    showNotice("Pin salvo no Pinterest.");
   }
 
   async function copyPrimaryImage() {
@@ -177,4 +288,13 @@
     if (e.button === 3) history.back();
     else if (e.button === 4) history.forward();
   });
+
+  window.addEventListener(
+    "mousemove",
+    (e) => {
+      const img = e.target?.closest?.("img");
+      lastHoveredPinImage = isViablePinImage(img) ? img : null;
+    },
+    true
+  );
 })();

@@ -26,7 +26,7 @@ com poucos MB: o binário de release no Linux tem **~4,4 MB** e o pacote `.deb` 
 | Atalho | Ação |
 | ------ | ---- |
 | `F` | Focar a busca do Pinterest |
-| `R` | Salvar a imagem principal do pin/página |
+| `R` | Salvar o pin no Pinterest (não baixa no PC) |
 | `Ctrl/Cmd + C` | Copiar a imagem principal |
 | `Ctrl/Cmd + Shift + C` | Copiar o link da página ou pin aberto |
 | `Q` | Voltar para a página inicial |
@@ -60,7 +60,7 @@ Para trocar o ícone, edite `icon.svg` e rode `npm run icon`.
 
 ## Releases
 
-Ao enviar uma tag `v*` (ex.: `git tag v0.4.0 && git push --tags`), o workflow
+Ao enviar uma tag `v*` (ex.: `git tag v0.4.1 && git push --tags`), o workflow
 `.github/workflows/release.yml` compila o app para macOS (universal), Windows e Linux e
 publica um release no GitHub com os instaladores. Também dá para rodar o
 workflow manualmente em *Actions → release → Run workflow*; a tag `v<versão>` é
